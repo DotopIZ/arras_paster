@@ -46,5 +46,7 @@ A schematic is a JSON **array of command objects**. Commands are executed
 sequentially, one every `paste_delay_ms` milliseconds.
 
 ### Commands
-`move_mouse`: moves "mouse". `x`, `y` is position relative to player. `unit` is unit of measurement, can be `grid` or `wall`
-`press`/`release`: presses and releases sandbox keys. `keyCode` - key to press. "\`" is `Self`, keys a...z are `KeyA`...`KeyZ`, digits 0...9 are `Digit0`...`Digit9`. Backticks are required(just like you would press normally)
+| Command           | Description |
+|-------------------| ---------------------- |
+| `move_mouse`      | moves "mouse". `x`, `y` is position relative to player. `unit` is unit of measurement, can be `grid` or `wall` |
+| `press`/`release` | presses and releases sandbox keys. `keyCode` - key to press. "\`" is `Self`, keys a...z are `KeyA`...`KeyZ`, digits 0...9 are `Digit0`...`Digit9`. Backticks are required(just like you would press normally) |
