@@ -16,6 +16,7 @@
 
 // UI shit
 let ui = null; // populated by menu() after buildUI()
+let paste_token = null;
 
 const app_state = {
     schematic: null,                      // parsed object or null
@@ -23,8 +24,10 @@ const app_state = {
     status: { level: 'idle', text: '' },  // last user-facing status
     settings: {
         wall_size: 64,
+        paste_delay_ms: 10, // so the game doesnt fucking crash
     },
 };
+
 
 // level: 'idle' | 'loading' | 'info' | 'success' | 'warning' | 'error'
 // cause: optional technical error (logged with stack)
@@ -59,7 +62,7 @@ function render_status() {
 
 function render_paste_button() {
     if (!ui || !ui.pasteBtn) return;
-    ui.pasteBtn.disabled = !app_state.schematic;
+    ui.pasteBtn.disabled = !app_state.schematic || paste_token !== null;
 }
 
 function render_wall_size_input() {
@@ -81,11 +84,18 @@ function render_schematic_info() {
     }
 }
 
+function render_paste_delay_input() {
+    if (!ui || !ui.pasteDelayInput) return;
+    if (document.activeElement === ui.pasteDelayInput) return;
+    ui.pasteDelayInput.value = String(app_state.settings.paste_delay_ms);
+}
+
 function update_ui() {
     render_status();
     render_paste_button();
     render_wall_size_input();
     render_schematic_info()
+    render_paste_delay_input()
     // сюда добавляешь новые render_* по мере роста меню
 }
 
@@ -99,12 +109,49 @@ const TEXT = {
     loadSchematicLoading: 'Loading…',
     errorNoSchematic: 'Schematic not loaded',
     pasteOk: 'Pasted',
+    pasting: 'Pasting…',
     pasteFailed: 'Paste failed',
+    pasteCancelled: 'Paste cancelled',
     pasteSchematic: 'Paste schematic',
+    pasteDelay: 'Paste delay (ms)',
     wallSize: 'Wall size',
     noSchematic: 'No schematic loaded',
     schematicLoadedPrefix: 'Loaded:',
 };
+
+function make_number_field({ id, label, min, step, get, set }) {
+    const row = document.createElement('div');
+    row.className = 'om-field';
+
+    const lbl = document.createElement('label');
+    lbl.className = 'om-label';
+    lbl.textContent = label;
+    lbl.htmlFor = id;
+
+    const input = document.createElement('input');
+    input.id = id;
+    input.className = 'om-input';
+    input.type = 'number';
+    input.min = String(min);
+    input.step = String(step);
+
+    input.addEventListener('input', () => {
+        const v = Number(input.value);
+        if (!Number.isInteger(v) || v < min) return;
+        set(v);
+    });
+    input.addEventListener('blur', () => {
+        if (document.activeElement === input) return;
+        input.value = String(get());
+    });
+
+    row.appendChild(lbl);
+    row.appendChild(input);
+    return { row, input, refresh: () => {
+        if (document.activeElement === input) return;
+        input.value = String(get());
+    }};
+}
 
 function menu() {
     'use strict';
@@ -233,26 +280,6 @@ function menu() {
         #om-schematic-info.om-empty { opacity: 0.5; font-style: italic; }
     `;
 
-    // ===== Rendering: state -> DOM =====
-    function render_schematic_status() {
-        const el = document.getElementById('om-status');
-        if (!el) return; // меню ещё не построено
-
-        if (app_state.schematic_status === 'loading') {
-            el.textContent = TEXT.loadSchematicLoading;
-            el.className = '';
-        } else if (app_state.schematic_status === 'ready') {
-            el.textContent = TEXT.loadSchematicOk;
-            el.className = 'om-ok';
-        } else if (app_state.schematic_status === 'error') {
-            el.textContent = app_state.schematic_error || TEXT.loadSchematicError;
-            el.className = 'om-error';
-        } else {
-            el.textContent = '';
-            el.className = '';
-        }
-    }
-
     // ===== DOM building =====
     function buildUI() {
         const style = document.createElement('style');
@@ -346,39 +373,20 @@ function menu() {
         body.appendChild(fileInput);
         body.appendChild(status);
 
-        // ---- Wall size field ----
-        const wallSizeRow = document.createElement('div');
-        wallSizeRow.className = 'om-field';
-
-        const wallSizeLabel = document.createElement('label');
-        wallSizeLabel.className = 'om-label';
-        wallSizeLabel.textContent = TEXT.wallSize;
-        wallSizeLabel.htmlFor = 'om-wall-size';
-
-        const wallSizeInput = document.createElement('input');
-        wallSizeInput.id = 'om-wall-size';
-        wallSizeInput.className = 'om-input';
-        wallSizeInput.type = 'number';
-        wallSizeInput.min = '1';
-        wallSizeInput.step = '1';
-
-        // DOM -> state
-        wallSizeInput.addEventListener('input', () => {
-            const v = Number(wallSizeInput.value);
-            if (!Number.isFinite(v) || v <= 0) return; // ignore empty / NaN / negative
-            app_state.settings.wall_size = v;
+        const wallSize = make_number_field({
+            id: 'om-wall-size', label: TEXT.wallSize, min: 1, step: 1,
+            get: () => app_state.settings.wall_size,
+            set: v => { app_state.settings.wall_size = v; },
         });
 
-        // when the user leaves the field, snap back to the state value
-        // (handles "user typed garbage and walked away")
-        wallSizeInput.addEventListener('blur', () => {
-            render_wall_size_input();
+        const pasteDelay = make_number_field({
+            id: 'om-paste-delay', label: TEXT.pasteDelay, min: 0, step: 10,
+            get: () => app_state.settings.paste_delay_ms,
+            set: v => { app_state.settings.paste_delay_ms = v; },
         });
 
-        wallSizeRow.appendChild(wallSizeLabel);
-        wallSizeRow.appendChild(wallSizeInput);
-
-        body.appendChild(wallSizeRow);
+        body.appendChild(wallSize.row);
+        body.appendChild(pasteDelay.row);
 
         panel.appendChild(header);
         panel.appendChild(body);
@@ -393,7 +401,10 @@ function menu() {
             toggle.textContent = hidden ? TEXT.toggleOpen : TEXT.toggleClose;
         });
 
-        return { root, toggle, panel, body, loadBtn, pasteBtn, wallSizeInput, schematicInfo, fileInput, status };
+        return { root, toggle, panel, body, loadBtn, pasteBtn,
+           wallSizeInput: wallSize.input,
+           pasteDelayInput: pasteDelay.input,
+           schematicInfo, fileInput, status };
     }
     ui = buildUI();
     update_ui();   // отрисовать стартовое состояние (кнопка disabled)
@@ -641,23 +652,66 @@ function on_schematic_loaded(schematic) {
   console.log('Schematic loaded:', schematic);
 }
 
-function paste_template(template) {
-  for (const line of template) {
-    arras_do(line)
-  }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function paste() {
+async function paste_template(template, delay_ms = 0, token = null) {
+    for (let i = 0; i < template.length; i++) {
+        if (token && token.cancelled) return false;   // ← проверка отмены
+        arras_do(template[i]);
+        if (delay_ms > 0 && i < template.length - 1) {
+            await sleep(delay_ms);
+        }
+    }
+    return true;   // выполнили всё до конца
+}
+
+async function paste() {
+    // ---- Toggle: второе нажатие = отмена ----
+    if (paste_token) {
+        paste_token.cancelled = true;
+        paste_token = null;
+        set_status('warning', TEXT.pasteCancelled);
+        update_ui();
+        return;
+    }
+
+    // ---- Первое нажатие: запуск ----
     if (!app_state.schematic) {
         set_status('error', TEXT.errorNoSchematic);
         return;
     }
 
+    const token = { cancelled: false };
+    paste_token = token;
+
+    // Снимок state на старте — если пользователь поменяет delay
+    // или загрузит новую схематику во время пасты, текущая доиграет
+    // со старыми значениями.
+    const template = app_state.schematic;
+    const delay_ms = app_state.settings.paste_delay_ms;
+
+    set_status('info', TEXT.pasting);
+    update_ui();
+
     try {
-        paste_template(app_state.schematic);
-        set_status('success', TEXT.pasteOk);
+        const finished = await paste_template(template, delay_ms, token);
+        // Ставим success, ТОЛЬКО если доиграли до конца и наш токен
+        // всё ещё «актуальный» (не отменён и не вытеснен новым запуском).
+        if (finished && paste_token === token) {
+            set_status('success', TEXT.pasteOk);
+        }
     } catch (err) {
-        set_status('error', TEXT.pasteFailed, err);
+        if (paste_token === token) {
+            set_status('error', TEXT.pasteFailed, err);
+        }
+    } finally {
+        // Сбрасываем ссылку только если она всё ещё наша.
+        // Если пользователь отменил (paste_token = null) или запустил
+        // новую пасту (paste_token = другой_токен) — не трогаем.
+        if (paste_token === token) paste_token = null;
+        update_ui();
     }
 }
 
