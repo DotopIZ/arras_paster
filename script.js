@@ -456,7 +456,6 @@ function hotkeys_listener() {
     });
 }
 
-
 function shut_up_arras_warnings(){
   const act_logger = console.log
   const filter_strings = [
@@ -715,6 +714,10 @@ async function paste() {
     }
 }
 
+function is_pasting() {
+    return paste_token !== null;
+}
+
 function load_schematic_dialog() {
     if (!ui || !ui.fileInput) {
         console.error('UI is not ready yet');
@@ -732,6 +735,7 @@ function wall_to_grid_unit(x, y) {
 function on_connect() {
   console.log("CONNECTED")
   game_update_listeners()
+  block_controls_when_pasting()
   // Has to be done even later for some reason
   shut_up_arras_warnings()
 }
@@ -740,6 +744,19 @@ function on_load() {
   console.log("LOADED")
   menu()
   hotkeys_listener()
+}
+
+function block_controls_when_pasting() {
+  arras.client.on("C", () => {
+    if (is_pasting()) {
+      return false
+    }
+  });
+  arras.client.on("0", () => {
+    if (is_pasting()) {
+      return false
+    }
+  });
 }
 
 const log_cmd = false
