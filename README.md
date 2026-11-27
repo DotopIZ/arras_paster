@@ -8,7 +8,7 @@ predefined key/mouse sequences ("schematics") in the in-game sandbox.
 1. Install a userscript manager: [Tampermonkey](https://www.tampermonkey.net/)
    (Chrome/Edge/Firefox/Safari).
 2. Open the Tampermonkey dashboard → **+** (new script).
-3. Paste the contents of `==UserScript==.txt` into the editor.
+3. Paste the contents of `script.js` into the editor.
 4. Save (Ctrl+S). Reload arras.io.
 
 The script auto-runs on `arras.io`, `arrax.io`, `arras.netlify.app`,
