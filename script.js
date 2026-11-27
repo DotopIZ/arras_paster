@@ -118,6 +118,7 @@ const TEXT = {
     wallSize: 'Wall size',
     noSchematic: 'No schematic loaded',
     schematicLoadedPrefix: 'Loaded:',
+    missingDependency: 'Missing "Arras Packet Hook" script',
 };
 
 function make_number_field({ id, label, min, step, get, set }) {
@@ -741,8 +742,22 @@ function on_connect() {
   shut_up_arras_warnings()
 }
 
+function check_dependencies() {
+    if (typeof arras === 'undefined' || !arras.client) {
+        console.error('[Paste Templates] Required script "Arras Packet Hook" is missing. Install it from: https://greasyfork.org/en/scripts/599561-arras-packet-hook');
+        return false;
+    }
+    return true;
+}
+
 function on_load() {
   console.log("LOADED")
+  if (!check_dependencies()) {
+        // Можно показать статус в меню, если оно уже построено
+        // или просто выйти, чтобы не спамить ошибками
+        set_status('error', TEXT.missingDependency);
+        return;
+  }
   menu()
   hotkeys_listener()
 }
