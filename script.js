@@ -9,6 +9,7 @@
 // @match        https://arras.netlify.app/
 // @match        https://arras.pages.dev/
 // @match        https://arras-wwii.pages.dev/
+// @require      https://update.greasyfork.org/scripts/599561/Arras%20Packet%20Hook.user.js
 // @icon         https://arras.io/favicon/64x64.png
 // @grant        none
 // ==/UserScript==
