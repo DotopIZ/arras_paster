@@ -1,7 +1,7 @@
 # arras.io Paste Templates
 
 Userscript for [arras.io](https://arras.io) (and mirrors) that replays
-predefined key/mouse sequences ("schematics") in the in-game sandbox.
+predefined key/mouse sequences ("schematics") in the sandbox.
 
 ## Install
 
