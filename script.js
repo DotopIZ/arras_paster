@@ -11,6 +11,7 @@
 // @match        https://arras-wwii.pages.dev/
 // @require      https://update.greasyfork.org/scripts/599561/Arras%20Packet%20Hook.user.js
 // @icon         https://arras.io/favicon/64x64.png
+// @license      The Unlicense
 // @grant        none
 // ==/UserScript==
 
