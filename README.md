@@ -7,12 +7,22 @@ predefined key/mouse sequences ("schematics") in the sandbox.
 
 1. Install a userscript manager: [Tampermonkey](https://www.tampermonkey.net/)
    (Chrome/Edge/Firefox/Safari).
-2. Open the Tampermonkey dashboard → **+** (new script).
-3. Paste the contents of `script.js` into the editor.
-4. Save (Ctrl+S). Reload arras.io.
+2. Install [dependency](https://greasyfork.org/en/scripts/599561-arras-packet-hook) script
+3. Open the Tampermonkey dashboard → **+** (new script).
+4. Paste the contents of `script.js` into the editor.
+5. Save (Ctrl+S). Reload arras.io.
 
 The script auto-runs on `arras.io`, `arrax.io`, `arras.netlify.app`,
 `arras.pages.dev`, and `arras-wwii.pages.dev`.
+
+## Dependencies
+
+This script requires **Arras Packet Hook** to be installed and enabled:
+
+- https://greasyfork.org/en/scripts/599561-arras-packet-hook
+
+It is loaded automatically via `@require`. If it is missing, the script will
+show an error in the menu and will not work.
 
 ## UI
 
